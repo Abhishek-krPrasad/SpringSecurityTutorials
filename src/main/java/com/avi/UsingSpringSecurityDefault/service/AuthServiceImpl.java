@@ -2,20 +2,15 @@ package com.avi.UsingSpringSecurityDefault.service;
 
 import com.avi.UsingSpringSecurityDefault.entity.*;
 import com.avi.UsingSpringSecurityDefault.repository.UserRepository;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
 import java.util.Optional;
 @Service
 @RequiredArgsConstructor
@@ -27,6 +22,7 @@ public class AuthServiceImpl implements AuthService{
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final UserDetailsServiceImpl userDetailsService;
+    private final SessionService sessionService;
 
     public UserDTO registerUser(SignUpDTO signUpDTO) {
         Optional<User> user = userRepository.findUserByEmail(signUpDTO.getEmail());
@@ -50,21 +46,22 @@ public class AuthServiceImpl implements AuthService{
         User user = (User) authentication.getPrincipal();
         String accessToken = jwtService.generateToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
+        sessionService.generateNewSession(user,refreshToken);
 
 
-
-        LoginResponse logRes = LoginResponse.builder()
+        return LoginResponse.builder()
                 .id(user.getId())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
-        return logRes;
     }
 
     @Override
     public LoginResponse refresh(String refreshToken) {
 
         Long userId = jwtService.getUserIdFromToken(refreshToken);
+
+        sessionService.validateSession(refreshToken);
 
         User user = userDetailsService.getUserByUserId(userId);
 
