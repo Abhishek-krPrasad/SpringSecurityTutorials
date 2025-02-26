@@ -1,6 +1,7 @@
 package com.avi.UsingSpringSecurityDefault.configuration;
 
 
+import com.avi.UsingSpringSecurityDefault.enums.Permission;
 import com.avi.UsingSpringSecurityDefault.handler.OAuth2SuccessHandler;
 import com.avi.UsingSpringSecurityDefault.service.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class WebSecurityConfig  {
         httpSecurity
                 .authorizeHttpRequests(auth->auth
                         .requestMatchers("/auth/**","/home.html").permitAll()
+                        .requestMatchers("/post/**").hasAuthority(Permission.POST_VIEW.name())
                         .anyRequest().authenticated())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sessionConfig->sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
